@@ -1,0 +1,42 @@
+// Sense Think Act with Interrupts 
+// LED brightness controlled by potentiometer using
+// button interrupt
+
+#define LED_PIN 13
+#define SENSOR_PIN A0
+#define INTERRUPT_PIN 2
+
+volatile int sensorValue = 0;
+volatile int ledBrightness = 0;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(INTERRUPT_PIN, INPUT_PULLUP);
+
+  //  Push Button pin with pull-up
+  attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), sensorInterruptHandler, FALLING); // Interrupt on button press
+
+  Serial.println("Ready, press button to update LED");
+}
+
+void loop() {
+  delay(100); // Short delay, loop mostly idle
+}
+
+void sensorInterruptHandler() {
+  // Sense: Read potentiometer value
+  sensorValue = analogRead(SENSOR_PIN);
+
+  // Think: Map sensor value to LED brightness (0-255)
+  ledBrightness = map(sensorValue, 0, 1023, 0, 255);
+
+  // Act: Update LED brightness
+  analogWrite(LED_PIN, ledBrightness);
+
+  // Serial output in ISR for demo
+  Serial.print("Sensor:");
+  Serial.print(sensorValue);
+  Serial.print(", LED:");
+  Serial.println(ledBrightness);
+}
