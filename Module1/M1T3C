@@ -1,0 +1,66 @@
+// Sense Think Act with Multiple Sensors 
+//(Potentiometer, Temperature, Photoresistor) and Interrupts
+// LED behavior controlled by three sensors,
+//triggered by button interrupt
+
+#define LED_PIN 13          // Define LED pin - 'Act' output
+#define POT_SENSOR_PIN A0   // Define Potentiometer pin - Sensor 1 (Analog Input)
+#define TEMP_SENSOR_PIN A1  // Define Temperature Sensor pin - Sensor 2 (Analog Input)
+#define LIGHT_SENSOR_PIN A2 // Define Photoresistor pin - Sensor 3 (Analog Input)
+#define BUTTON_PIN 2        // Define Button pin - Interrupt Trigger
+
+volatile int potValue = 0;         // Volatile: Potentiometer reading - 'Sense' data from Sensor 1
+volatile int tempValue = 0;        // Volatile: Temperature Sensor reading - 'Sense' data from Sensor 2
+volatile int lightValue = 0;       // Volatile: Photoresistor reading - 'Sense' data from Sensor 3
+volatile int ledBrightness = 0;     // Volatile: LED brightness - 'Act' control parameter
+volatile bool blinkModeActive = false; // Volatile: Blink mode flag
+
+void setup() {
+  Serial.begin(9600);         // Initialize Serial for monitoring
+  pinMode(LED_PIN, OUTPUT);    // Configure LED pin as output
+  pinMode(BUTTON_PIN, INPUT_PULLUP); // Button pin with pull-up
+
+  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), sensorInterruptHandler, FALLING); // Interrupt on button press
+
+  Serial.println("Ready, press button (Pin 2) to update LED based on sensors"); // User feedback
+}
+
+void loop() {
+  if (blinkModeActive) { // Blink mode controlled by pot
+    static unsigned long lastBlinkTime = 0;
+    long blinkInterval = map(tempValue, 0, 1000, 100, 1000); // Map temp to blink speed (example)
+    blinkInterval = constrain(blinkInterval, 200, 1000);      // Constrain blink interval
+    analogWrite(LED_PIN, ledBrightness);
+    if (millis() - lastBlinkTime >= blinkInterval) {
+      lastBlinkTime = millis();
+      digitalWrite(LED_PIN, !digitalRead(LED_PIN)); // Toggle LED state
+    }
+  } else {
+  
+  }
+  delay(50); // Short delay in loop
+}
+// Interrupt Service Routine - Handles button press, reads all sensors, updates LED
+void sensorInterruptHandler() {
+  
+  potValue = analogRead(POT_SENSOR_PIN);
+  tempValue = analogRead(TEMP_SENSOR_PIN);
+  lightValue = analogRead(LIGHT_SENSOR_PIN);
+  if (potValue > 100) { // led should turn on when pot value is more than 100
+    ledBrightness = map(lightValue, 0, 1023, 0, 255); // if led is on and light value is 0 to max , the ledbrightness should be mapped to light snesor  brigthness value
+    blinkModeActive = true; // and then temp sensor value will indicate light blinking speed
+  } else {
+    ledBrightness = 0; // led is off when pot value is not more than 100
+    blinkModeActive = false; // no blinking when led is off
+  }
+  Serial.print("Button Interrupt - Pot:");
+  Serial.print(potValue);
+  Serial.print(", Temp:");
+  Serial.print(tempValue);
+  Serial.print(", Light:");
+  Serial.print(lightValue);
+  Serial.print(", Brightness:");
+  Serial.print(ledBrightness);
+  Serial.print(", BlinkMode:");
+  Serial.println(blinkModeActive);
+}
